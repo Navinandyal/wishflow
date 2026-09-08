@@ -1,0 +1,6 @@
+{
+  "name": "WishFlow AI",
+  "description": "Automated, AI-personalised birthday wishes on WhatsApp for business owners and SCGT networking members.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
