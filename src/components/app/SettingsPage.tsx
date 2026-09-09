@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { SendMode } from '../../types';
 import { PLANS } from '../../data/initialData';
+import { playMorningChime } from '../../utils/localNotifications';
 import {
   Settings,
   MessageCircle,
@@ -18,10 +19,15 @@ import {
   Plus,
   Trash2,
   Lock,
+  Bell,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Cake,
 } from 'lucide-react';
 
 interface SettingsPageProps {
-  initialTab?: 'whatsapp' | 'sending' | 'profile' | 'team' | 'billing' | 'privacy';
+  initialTab?: 'whatsapp' | 'sending' | 'notifications' | 'profile' | 'team' | 'billing' | 'privacy';
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
@@ -29,6 +35,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
   const {
     tenant,
+    customers,
     connectWhatsApp,
     disconnectWhatsApp,
     updateBranding,
@@ -36,10 +43,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     upgradePlan,
     currentRole,
     showToast,
+    notificationPermission,
+    requestNotificationPermission,
+    localNotificationSettings,
+    updateLocalNotificationSettings,
+    triggerMorningBirthdayCheck,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<
-    'whatsapp' | 'sending' | 'profile' | 'team' | 'billing' | 'privacy'
+    'whatsapp' | 'sending' | 'notifications' | 'profile' | 'team' | 'billing' | 'privacy'
   >(initialTab);
 
   React.useEffect(() => {
@@ -68,6 +80,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [state, setState] = useState(tenant.profile.state);
   const [address, setAddress] = useState(tenant.profile.address);
   const [signOff, setSignOff] = useState(tenant.profile.signatureSignOff);
+
+  // Local notification settings form
+  const [notifEnabled, setNotifEnabled] = useState(localNotificationSettings.enabled);
+  const [notifMorningTime, setNotifMorningTime] = useState(localNotificationSettings.morningTime);
+  const [notifSoundEnabled, setNotifSoundEnabled] = useState(localNotificationSettings.soundEnabled);
+  const [notifNotifyOnStartup, setNotifNotifyOnStartup] = useState(localNotificationSettings.notifyOnStartup);
+
+  React.useEffect(() => {
+    setNotifEnabled(localNotificationSettings.enabled);
+    setNotifMorningTime(localNotificationSettings.morningTime);
+    setNotifSoundEnabled(localNotificationSettings.soundEnabled);
+    setNotifNotifyOnStartup(localNotificationSettings.notifyOnStartup);
+  }, [localNotificationSettings]);
+
+  const handleSaveNotifications = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateLocalNotificationSettings({
+      enabled: notifEnabled,
+      morningTime: notifMorningTime,
+      soundEnabled: notifSoundEnabled,
+      notifyOnStartup: notifNotifyOnStartup,
+    });
+  };
 
   // Team invite state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -166,6 +201,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           >
             <Clock className="w-4 h-4" />
             <span>Sending & Autopilot</span>
+          </button>
+
+          <button
+            id="tab-btn-morning-alerts"
+            onClick={() => setActiveTab('notifications')}
+            className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2.5 transition-all text-left ${
+              activeTab === 'notifications'
+                ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                : 'text-stone-700 hover:bg-stone-50'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            <span>Morning Alerts (Local)</span>
           </button>
 
           <button
@@ -464,6 +512,273 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </button>
               </div>
             </form>
+          )}
+
+          {/* TAB: MORNING BIRTHDAY NOTIFICATIONS */}
+          {activeTab === 'notifications' && (
+            <div className="space-y-6 text-xs">
+              <div className="border-b border-stone-100 pb-3 flex items-start justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-emerald-600" />
+                    <span>Morning Birthday Alerts & Local Notifications</span>
+                  </h2>
+                  <p className="text-stone-500 mt-0.5">
+                    Configure automated local alerts that notify you on the morning of a contact's birthday via browser notifications, celebratory audio chime, and in-app banners.
+                  </p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[11px] flex items-center gap-1 shrink-0">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span>Local & Private</span>
+                </span>
+              </div>
+
+              {/* Browser Notification Permission Card */}
+              <div className="p-4 rounded-2xl border bg-stone-50/80 border-stone-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-700 shadow-2xs">
+                      <Bell className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-stone-900 text-xs sm:text-sm flex items-center gap-2">
+                        <span>Desktop Browser Notifications</span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            notificationPermission === 'granted'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : notificationPermission === 'denied'
+                              ? 'bg-rose-100 text-rose-800 border-rose-300'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}
+                        >
+                          {notificationPermission === 'granted'
+                            ? 'Granted & Active ✓'
+                            : notificationPermission === 'denied'
+                            ? 'Blocked by Browser ✕'
+                            : 'Permission Needed ⚠️'}
+                        </span>
+                      </div>
+                      <p className="text-stone-500 text-[11px] mt-0.5">
+                        {notificationPermission === 'granted'
+                          ? 'Your browser will display system notifications on your desktop or lock screen even when this tab is in the background.'
+                          : notificationPermission === 'denied'
+                          ? 'Notifications are blocked in your browser. Click the lock/settings icon in your browser URL bar to change Notifications to Allow.'
+                          : 'Grant browser permission to receive desktop alerts on the morning of customer birthdays.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    {notificationPermission === 'granted' ? (
+                      <button
+                        onClick={() => triggerMorningBirthdayCheck(true)}
+                        className="min-h-[40px] px-3.5 py-1.5 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Send Test Desktop Alert</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={requestNotificationPermission}
+                        className="min-h-[40px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Enable Desktop Notifications</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Alert Configuration Form */}
+              <form onSubmit={handleSaveNotifications} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Enable Switch */}
+                  <div
+                    onClick={() => setNotifEnabled(!notifEnabled)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      notifEnabled
+                        ? 'bg-emerald-50/60 border-emerald-300'
+                        : 'bg-stone-50 border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-stone-900 text-xs">
+                        Morning Birthday Alert Engine
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={notifEnabled}
+                        onChange={() => {}}
+                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      Automatically scan customer records every morning and alert you when birthdays are detected.
+                    </p>
+                  </div>
+
+                  {/* Morning Dispatch Time */}
+                  <div className="p-4 rounded-2xl border border-stone-200 bg-stone-50/50 space-y-2">
+                    <label className="block font-bold text-stone-800 text-xs">
+                      Morning Alert Time (IST)
+                    </label>
+                    <input
+                      type="time"
+                      value={notifMorningTime}
+                      onChange={(e) => setNotifMorningTime(e.target.value)}
+                      className="w-full min-h-[40px] px-3.5 py-1.5 bg-white border border-stone-300 rounded-xl font-mono text-xs font-semibold"
+                    />
+                    <p className="text-[11px] text-stone-500">
+                      Optimal morning window for Indian SMBs: 08:00 AM – 09:00 AM.
+                    </p>
+                  </div>
+
+                  {/* Sound Chime Toggle */}
+                  <div
+                    onClick={() => setNotifSoundEnabled(!notifSoundEnabled)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      notifSoundEnabled
+                        ? 'bg-emerald-50/60 border-emerald-300'
+                        : 'bg-stone-50 border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-stone-900 text-xs flex items-center gap-1.5">
+                        {notifSoundEnabled ? (
+                          <Volume2 className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <VolumeX className="w-4 h-4 text-stone-400" />
+                        )}
+                        <span>Celebratory Audio Chime</span>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={notifSoundEnabled}
+                        onChange={() => {}}
+                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      Plays a pleasant 4-note synthesizer celebration chime using Web Audio API when morning birthdays are alerted.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playMorningChime();
+                      }}
+                      className="mt-2 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline flex items-center gap-1"
+                    >
+                      <span>Preview Chime Sound ♫</span>
+                    </button>
+                  </div>
+
+                  {/* Startup Alert Toggle */}
+                  <div
+                    onClick={() => setNotifNotifyOnStartup(!notifNotifyOnStartup)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      notifNotifyOnStartup
+                        ? 'bg-emerald-50/60 border-emerald-300'
+                        : 'bg-stone-50 border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-stone-900 text-xs">
+                        Show In-App Banner on Launch
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={notifNotifyOnStartup}
+                        onChange={() => {}}
+                        className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[11px] text-stone-500 leading-relaxed">
+                      Displays the celebratory banner at the top of the dashboard whenever you open WishFlow on the morning of a contact's birthday.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    className="min-h-[44px] px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    Save Notification Preferences
+                  </button>
+                </div>
+              </form>
+
+              {/* Today's Detected Birthdays & Testing */}
+              <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Cake className="w-4 h-4 text-amber-500" />
+                    <span className="font-bold text-stone-900 text-xs">
+                      Today's Detected Birthday Contacts
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-stone-500">
+                    {customers.filter(
+                      (c) =>
+                        !c.archived &&
+                        c.birthdayDay === new Date().getDate() &&
+                        c.birthdayMonth === new Date().getMonth() + 1
+                    ).length}{' '}
+                    celebrating today
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {customers
+                    .filter(
+                      (c) =>
+                        !c.archived &&
+                        c.birthdayDay === new Date().getDate() &&
+                        c.birthdayMonth === new Date().getMonth() + 1
+                    )
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-stone-200/80 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-[10px]">
+                            {c.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-stone-900">{c.name}</div>
+                            <div className="text-[10px] text-stone-500 font-mono">
+                              {c.whatsAppNumber || c.mobile} • {c.relationship}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[10px]">
+                          Birthday Today
+                        </span>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Instant Simulation Action */}
+                <div className="pt-2 border-t border-stone-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-[11px] text-stone-500">
+                    Click the button to simulate the complete morning alert sequence (desktop notification, chime, and in-app banner).
+                  </div>
+
+                  <button
+                    onClick={() => triggerMorningBirthdayCheck(true)}
+                    className="w-full sm:w-auto min-h-[40px] px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Test Morning Birthday Alert Now</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* TAB 3: BUSINESS PROFILE & BRANDING */}

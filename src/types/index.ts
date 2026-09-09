@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'staff' | 'superadmin';
+export type UserRole = 'owner' | 'manager' | 'staff' | 'superadmin';
 
 export type TenantType = 'business' | 'scgt_member';
 
@@ -10,6 +10,56 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   twoFactorEnabled?: boolean;
+}
+
+export interface StoredUser extends User {
+  passwordHash: string;
+  passwordSalt: string;
+  createdAt: string;
+  lastLoginAt?: string;
+  tenantId: string;
+  status: 'active' | 'suspended' | 'pending';
+}
+
+export interface UserSession {
+  token: string;
+  userId: string;
+  user: User;
+  role: UserRole;
+  tenantId: string;
+  createdAt: string;
+  expiresAt: string;
+  lastActiveAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface RegistrationInput {
+  name: string;
+  email: string;
+  mobile: string;
+  password: string;
+  role?: UserRole;
+  accountType?: TenantType;
+  businessName: string;
+  industry?: string;
+  city?: string;
+  state?: string;
+  scgtChapter?: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: User;
+  session?: UserSession;
+  error?: string;
+}
+
+export interface LoginCredentials {
+  identifier: string; // email or mobile
+  password?: string;
+  otpCode?: string;
+  mode: 'password' | 'otp';
 }
 
 export interface BusinessProfile {
@@ -231,6 +281,14 @@ export interface SendingPreferences {
   defaultTone: 'Warm & Heartfelt' | 'Professional & Respectful' | 'Cheerful & Festive' | 'Brief & Crisp' | 'Networking / Business Value';
   defaultLanguage: 'English' | 'Hindi' | 'Marathi';
   frequencyCapDays: number;
+}
+
+export interface LocalNotificationSettings {
+  enabled: boolean;
+  morningTime: string; // "08:00"
+  soundEnabled: boolean;
+  notifyOnStartup: boolean;
+  lastAlertDate?: string;
 }
 
 export interface TeamMember {
