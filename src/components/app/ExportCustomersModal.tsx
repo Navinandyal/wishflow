@@ -23,12 +23,12 @@ export const ExportCustomersModal: React.FC<ExportCustomersModalProps> = ({
 
   const handleExport = () => {
     if (!isOwner) {
-      alert('Security Policy: Only the primary business owner can export customer database records.');
+      showToast('Security Policy: Only the primary business owner can export customer database records.', 'error');
       return;
     }
 
     if (!confirmedRisk) {
-      alert('Please acknowledge data privacy compliance before exporting.');
+      showToast('Please acknowledge data privacy compliance checkbox before exporting.', 'warning');
       return;
     }
 

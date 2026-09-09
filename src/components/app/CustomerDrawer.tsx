@@ -22,19 +22,25 @@ import {
 } from 'lucide-react';
 
 interface CustomerDrawerProps {
-  onEdit: (c: Customer) => void;
+  customer?: Customer | null;
+  onClose?: () => void;
+  onEdit?: (c: Customer) => void;
 }
 
-export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
+export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ customer, onClose, onEdit }) => {
   const {
     activeCustomerForDrawer,
     setActiveCustomerForDrawer,
+    setCustomerToEdit,
+    setIsAddCustomerModalOpen,
     messages,
     updateConsent,
     archiveCustomer,
     deleteCustomer,
     setActiveWishTargetCustomer,
     sendMessage,
+    updateCustomer,
+    showToast,
     tenant,
     navigate,
   } = useApp();
@@ -42,8 +48,23 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'wishes' | 'consent' | 'notes'>('profile');
   const [internalNote, setInternalNote] = useState('');
 
-  if (!activeCustomerForDrawer) return null;
-  const c = activeCustomerForDrawer;
+  const c = customer || activeCustomerForDrawer;
+  if (!c) return null;
+
+  const handleClose = () => {
+    if (onClose) onClose();
+    setActiveCustomerForDrawer(null);
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(c);
+    } else {
+      setCustomerToEdit(c);
+      setIsAddCustomerModalOpen(true);
+      handleClose();
+    }
+  };
 
   // Filter messages for this customer
   const customerMessages = messages.filter((m) => m.customerId === c.id);
@@ -60,7 +81,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
 
   const handleGenerateWish = () => {
     setActiveWishTargetCustomer(c);
-    setActiveCustomerForDrawer(null);
+    handleClose();
     navigate('/app/wishes');
   };
 
@@ -91,17 +112,14 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => {
-                setActiveCustomerForDrawer(null);
-                onEdit(c);
-              }}
+              onClick={handleEdit}
               className="p-2 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100"
               title="Edit Customer"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setActiveCustomerForDrawer(null)}
+              onClick={handleClose}
               className="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100"
             >
               <X className="w-5 h-5" />
@@ -281,16 +299,16 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
                     className="p-4 rounded-2xl bg-white border border-stone-200 shadow-2xs space-y-3"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-stone-900">{msg.toneUsed} Tone</span>
+                      <span className="font-bold text-stone-900">{msg.tone || msg.toneUsed || 'Warm'} Tone</span>
                       <MessageStatusBadge status={msg.status} />
                     </div>
 
                     <WhatsAppBubble
-                      message={msg.messageText}
+                      message={msg.messageBody || msg.messageText || ''}
                       recipientName={c.name}
                       businessName={tenant.profile.businessName}
                       status={msg.status}
-                      time={new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], {
+                      time={new Date(msg.sentAt || msg.queuedAt || msg.createdAt || Date.now()).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -298,7 +316,7 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
 
                     <div className="text-[10px] text-stone-400 flex items-center justify-between pt-1">
                       <span>Language: {msg.language}</span>
-                      <span>Dispatched: {new Date(msg.createdAt).toLocaleDateString('en-IN')}</span>
+                      <span>Dispatched: {new Date(msg.sentAt || msg.queuedAt || msg.createdAt || Date.now()).toLocaleDateString('en-IN')}</span>
                     </div>
                   </div>
                 ))
@@ -377,8 +395,13 @@ export const CustomerDrawer: React.FC<CustomerDrawerProps> = ({ onEdit }) => {
               </div>
 
               <button
-                onClick={() => alert('Note saved to contact record.')}
-                className="min-h-[40px] px-4 py-2 bg-stone-900 text-white font-semibold rounded-xl text-xs"
+                onClick={() => {
+                  if (internalNote.trim()) {
+                    updateCustomer(c.id, { notes: internalNote.trim() });
+                  }
+                  showToast('Note saved to contact record.', 'success');
+                }}
+                className="min-h-[40px] px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-xs transition-colors"
               >
                 Save Note
               </button>

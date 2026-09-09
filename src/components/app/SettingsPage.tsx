@@ -42,6 +42,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     'whatsapp' | 'sending' | 'profile' | 'team' | 'billing' | 'privacy'
   >(initialTab);
 
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   // WhatsApp connection form simulation
   const [phoneNumberInput, setPhoneNumberInput] = useState('+91 98220 14589');
   const [wabaIdInput, setWabaIdInput] = useState('waba_9928172901');
@@ -662,7 +668,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       <div className="text-[11px] text-stone-500">1 Sep 2026 • ₹2,358.82 (incl. 18% GST)</div>
                     </div>
                     <button
-                      onClick={() => alert('Downloading GST invoice PDF')}
+                      onClick={() => showToast('Downloading GST invoice PDF (INV-2026-00912)...', 'success')}
                       className="text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -675,7 +681,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       <div className="text-[11px] text-stone-500">1 Aug 2026 • ₹2,358.82 (incl. 18% GST)</div>
                     </div>
                     <button
-                      onClick={() => alert('Downloading GST invoice PDF')}
+                      onClick={() => showToast('Downloading GST invoice PDF (INV-2026-00834)...', 'success')}
                       className="text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
                     >
                       <Download className="w-3.5 h-3.5" />

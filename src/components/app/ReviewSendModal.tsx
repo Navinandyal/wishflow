@@ -73,6 +73,29 @@ export const ReviewSendModal: React.FC<ReviewSendModalProps> = ({
     return initial;
   });
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setDrafts((prev) => {
+        const next = { ...prev };
+        todayCustomers.forEach((c) => {
+          if (!next[c.id]) {
+            const isMarathi = c.preferredLanguage === 'Marathi';
+            const text = isMarathi
+              ? `प्रिय ${c.name}, आपणास वाढदिवसाच्या मनःपूर्वक हार्दिक शुभेच्छा! 🎉✨ डॉक्टर राजेश कुलकर्णी आणि Sunrise Dental Care कडून आपले आरोग्य सदैव निरोगी आणि सुखी राहो हीच सदिच्छा.`
+              : `Dear ${c.name}, wishing you a wonderfully healthy and joyful Birthday! 🎂✨ Warm regards from Dr. Rajesh Kulkarni and the entire family at ${tenant.profile.businessName}. May your year ahead be blessed with smiles.`;
+            next[c.id] = {
+              text,
+              isEditing: false,
+              approved: true,
+              skipped: false,
+            };
+          }
+        });
+        return next;
+      });
+    }
+  }, [isOpen, todayCustomers, tenant.profile.businessName]);
+
   const [showConfirmSendAll, setShowConfirmSendAll] = useState(false);
   const [isSending, setIsSending] = useState(false);
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LiveDemoGenerator } from './LiveDemoGenerator';
+import { Navbar } from '../common/Navbar';
 import {
   Sparkles,
   Send,
@@ -17,6 +18,7 @@ import {
   ChevronDown,
   Star,
   Zap,
+  LayoutDashboard,
 } from 'lucide-react';
 import { PLANS } from '../../data/initialData';
 
@@ -142,8 +144,10 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div id="public-landing-page" className="bg-white text-stone-900">
+      <Navbar />
+
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 border-b border-stone-100 bg-gradient-to-b from-emerald-50/40 via-white to-white">
+      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-16 sm:pb-28 border-b border-stone-100 bg-gradient-to-b from-emerald-50/40 via-white to-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/70 text-emerald-800 text-xs font-semibold mb-6 border border-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
@@ -161,12 +165,21 @@ export const LandingPage: React.FC = () => {
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
+              id="hero-open-app-cta"
+              onClick={() => navigate('/app/dashboard')}
+              className="w-full sm:w-auto min-h-[48px] px-7 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-bold rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all group"
+            >
+              <LayoutDashboard className="w-4 h-4 text-emerald-200" />
+              <span>Open App Dashboard</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button
               id="hero-start-free-cta"
               onClick={() => navigate('/register')}
-              className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-bold rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all group"
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3.5 bg-stone-900 hover:bg-stone-800 active:bg-stone-950 text-white text-sm font-bold rounded-2xl shadow-xs flex items-center justify-center gap-2 transition-all"
             >
-              <span>Start Free (14-Day Trial)</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>Start Free Trial</span>
             </button>
 
             <button

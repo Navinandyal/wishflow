@@ -30,6 +30,7 @@ export const Dashboard: React.FC = () => {
     setActiveCustomerForDrawer,
     setActiveWishTargetCustomer,
     setIsReviewSendAllOpen,
+    setIsReviewSendModalOpen,
     sendMessage,
     showToast,
   } = useApp();
@@ -117,7 +118,10 @@ export const Dashboard: React.FC = () => {
         {/* Primary Action Button */}
         <button
           id="dashboard-review-send-all-btn"
-          onClick={() => setIsReviewSendAllOpen(true)}
+          onClick={() => {
+            setIsReviewSendAllOpen(true);
+            setIsReviewSendModalOpen(true);
+          }}
           className="min-h-[48px] px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md flex items-center justify-center gap-2.5 transition-all group"
         >
           <Send className="w-4 h-4 text-emerald-100 group-hover:translate-x-0.5 transition-transform" />

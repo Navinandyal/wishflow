@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LandingPage } from './components/public/LandingPage';
 import { PricingPage } from './components/public/PricingPage';
 import { PublicCustomerCollection } from './components/public/PublicCustomerCollection';
@@ -18,6 +19,7 @@ import { TemplatesPage } from './components/app/TemplatesPage';
 import { SCGTPage } from './components/app/SCGTPage';
 import { AnalyticsPage } from './components/app/AnalyticsPage';
 import { SettingsPage } from './components/app/SettingsPage';
+import { BottomNav } from './components/common/BottomNav';
 import {
   LayoutDashboard,
   Users,
@@ -61,6 +63,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setIsExportModalOpen,
     isReviewSendModalOpen,
     setIsReviewSendModalOpen,
+    isReviewSendAllOpen,
+    setIsReviewSendAllOpen,
+    addCustomer,
+    updateCustomer,
     toast,
   } = useApp();
 
@@ -175,7 +181,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = currentPath === item.path;
+                const isActive =
+                  item.path === '/app/dashboard'
+                    ? currentPath === '/app/dashboard'
+                    : currentPath.startsWith(item.path);
 
                 return (
                   <button
@@ -221,7 +230,7 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="flex items-center justify-between text-stone-600">
                 <span>Plan:</span>
                 <span className="font-bold text-stone-800 capitalize">
-                  {tenant.plan}
+                  {tenant.plan || tenant.planId}
                 </span>
               </div>
             </div>
@@ -260,7 +269,10 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="md:hidden bg-white border-b border-stone-200 p-4 space-y-2 z-40">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentPath === item.path;
+              const isActive =
+                item.path === '/app/dashboard'
+                  ? currentPath === '/app/dashboard'
+                  : currentPath.startsWith(item.path);
               return (
                 <button
                   key={item.path}
@@ -283,8 +295,11 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden">{children}</main>
+        <main className="flex-1 overflow-x-hidden pb-20 md:pb-0">{children}</main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
 
       {/* Global Modals */}
       {activeCustomerForDrawer && (
@@ -298,6 +313,14 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <AddEditCustomerModal
           isOpen={isAddCustomerModalOpen}
           onClose={() => setIsAddCustomerModalOpen(false)}
+          onSave={(data) => {
+            if (customerToEdit) {
+              updateCustomer(customerToEdit.id, data);
+            } else {
+              addCustomer(data as any);
+            }
+            setIsAddCustomerModalOpen(false);
+          }}
           customerToEdit={customerToEdit}
         />
       )}
@@ -316,10 +339,13 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         />
       )}
 
-      {isReviewSendModalOpen && (
+      {(isReviewSendModalOpen || isReviewSendAllOpen) && (
         <ReviewSendModal
-          isOpen={isReviewSendModalOpen}
-          onClose={() => setIsReviewSendModalOpen(false)}
+          isOpen={isReviewSendModalOpen || isReviewSendAllOpen}
+          onClose={() => {
+            setIsReviewSendModalOpen(false);
+            setIsReviewSendAllOpen(false);
+          }}
         />
       )}
 
@@ -347,40 +373,94 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AppContent: React.FC = () => {
-  const { currentPath } = useApp();
+  const {
+    currentPath,
+    currentRoute,
+    setCustomerToEdit,
+    setIsAddCustomerModalOpen,
+    setIsImportModalOpen,
+    setIsExportModalOpen,
+  } = useApp();
+
+  const path = currentPath || currentRoute || '/app/dashboard';
 
   // Route matching
-  if (currentPath === '/') {
+  if (
+    path === '/' ||
+    path === '/landing' ||
+    path === '/features' ||
+    path === '/demo' ||
+    path === '/scgt-info'
+  ) {
     return <LandingPage />;
   }
 
-  if (currentPath === '/pricing') {
+  if (path === '/pricing') {
     return <PricingPage />;
   }
 
-  if (currentPath === '/collect') {
+  if (path === '/collect' || path.startsWith('/public')) {
     return <PublicCustomerCollection />;
   }
 
-  if (currentPath === '/login') {
+  if (path === '/login') {
     return <LoginPage />;
   }
 
-  if (currentPath === '/register') {
+  if (path === '/register') {
     return <RegisterPage />;
   }
 
   // App routes
-  if (currentPath.startsWith('/app/')) {
-    let Component = Dashboard;
+  if (path.startsWith('/app/') || path === '/ops') {
+    if (path === '/app/customers') {
+      return (
+        <AppShell>
+          <CustomersList
+            onOpenAddModal={() => {
+              setCustomerToEdit(null);
+              setIsAddCustomerModalOpen(true);
+            }}
+            onOpenImportModal={() => setIsImportModalOpen(true)}
+            onOpenExportModal={() => setIsExportModalOpen(true)}
+            onEditCustomer={(c) => {
+              setCustomerToEdit(c);
+              setIsAddCustomerModalOpen(true);
+            }}
+          />
+        </AppShell>
+      );
+    }
 
-    if (currentPath === '/app/customers') Component = CustomersList;
-    else if (currentPath === '/app/wishes') Component = WishGeneratorPage;
-    else if (currentPath === '/app/birthdays') Component = BirthdaysPage;
-    else if (currentPath === '/app/templates') Component = TemplatesPage;
-    else if (currentPath === '/app/scgt') Component = SCGTPage;
-    else if (currentPath === '/app/analytics') Component = AnalyticsPage;
-    else if (currentPath === '/app/settings') Component = SettingsPage;
+    if (path.startsWith('/app/settings')) {
+      let initialTab: 'whatsapp' | 'sending' | 'profile' | 'team' | 'billing' | 'privacy' = 'whatsapp';
+      if (path.includes('/profile')) initialTab = 'profile';
+      else if (path.includes('/whatsapp')) initialTab = 'whatsapp';
+      else if (path.includes('/sending')) initialTab = 'sending';
+      else if (path.includes('/team')) initialTab = 'team';
+      else if (path.includes('/billing')) initialTab = 'billing';
+      else if (path.includes('/privacy')) initialTab = 'privacy';
+
+      return (
+        <AppShell>
+          <SettingsPage initialTab={initialTab} />
+        </AppShell>
+      );
+    }
+
+    let Component = Dashboard;
+    if (path === '/app/wishes') Component = WishGeneratorPage;
+    else if (path === '/app/birthdays') Component = BirthdaysPage;
+    else if (path === '/app/templates') Component = TemplatesPage;
+    else if (path === '/app/scgt') Component = SCGTPage;
+    else if (
+      path === '/app/analytics' ||
+      path === '/app/reports' ||
+      path === '/app/messages' ||
+      path === '/ops'
+    ) {
+      Component = AnalyticsPage;
+    }
 
     return (
       <AppShell>
@@ -399,8 +479,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

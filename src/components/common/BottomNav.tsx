@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
-  const { currentRoute, navigate, customers } = useApp();
+  const { currentRoute, navigate, customers, setIsReviewSendModalOpen, setIsReviewSendAllOpen } = useApp();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const today = new Date();
@@ -36,20 +36,24 @@ export const BottomNav: React.FC = () => {
       badge: todayBirthdaysCount > 0 ? todayBirthdaysCount : undefined,
     },
     { label: 'Customers', path: '/app/customers', icon: Users },
-    { label: 'Messages', path: '/app/messages', icon: MessageSquare },
+    { label: 'Analytics', path: '/app/analytics', icon: MessageSquare },
   ];
 
   const moreItems = [
     { label: 'Wish Generator', path: '/app/wishes', icon: Sparkles, color: 'text-emerald-600' },
     { label: 'Review & Send All', path: '/app/review-send', icon: Send, color: 'text-emerald-600' },
     { label: 'Templates Library', path: '/app/templates', icon: FileText, color: 'text-stone-600' },
-    { label: 'Reports & Analytics', path: '/app/reports', icon: BarChart3, color: 'text-stone-600' },
-    { label: 'SCGT Networking', path: '/app/scgt', icon: Award, color: 'text-indigo-600' },
+    { label: 'SCGT Alliance', path: '/app/scgt', icon: Award, color: 'text-indigo-600' },
     { label: 'Settings & WhatsApp', path: '/app/settings', icon: Settings, color: 'text-stone-600' },
   ];
 
   const handleNav = (path: string) => {
-    navigate(path);
+    if (path === '/app/review-send') {
+      setIsReviewSendModalOpen(true);
+      setIsReviewSendAllOpen(true);
+    } else {
+      navigate(path);
+    }
     setIsMoreOpen(false);
   };
 

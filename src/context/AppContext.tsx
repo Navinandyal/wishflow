@@ -43,6 +43,9 @@ interface AppContextType {
   tenant: Tenant;
   isLoggedIn: boolean;
   currentRoute: string;
+  currentPath: string;
+  currentRole: 'owner' | 'manager' | 'staff' | 'superadmin';
+  setRole: (role: 'owner' | 'manager' | 'staff' | 'superadmin') => void;
   navigate: (route: string) => void;
   customers: Customer[];
   messages: MessageRecord[];
@@ -56,6 +59,7 @@ interface AppContextType {
   featureFlags: FeatureFlag[];
   preferences: SendingPreferences;
   toasts: ToastState[];
+  toast: ToastState | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   removeToast: (id: string) => void;
 
@@ -66,6 +70,17 @@ interface AppContextType {
   setActiveWishTargetCustomer: (c: Customer | null) => void;
   isReviewSendAllOpen: boolean;
   setIsReviewSendAllOpen: (open: boolean) => void;
+
+  isAddCustomerModalOpen: boolean;
+  setIsAddCustomerModalOpen: (open: boolean) => void;
+  customerToEdit: Customer | null;
+  setCustomerToEdit: (c: Customer | null) => void;
+  isImportModalOpen: boolean;
+  setIsImportModalOpen: (open: boolean) => void;
+  isExportModalOpen: boolean;
+  setIsExportModalOpen: (open: boolean) => void;
+  isReviewSendModalOpen: boolean;
+  setIsReviewSendModalOpen: (open: boolean) => void;
 
   // Customer actions
   addCustomer: (cust: Omit<Customer, 'id' | 'createdAt' | 'tenantId'>) => Customer;
@@ -89,15 +104,20 @@ interface AppContextType {
   updateBranding: (branding: Partial<BusinessProfile>) => void;
   updatePreferences: (prefs: Partial<SendingPreferences>) => void;
   toggleWhatsAppConnection: (connect: boolean) => void;
+  connectWhatsApp: (phoneNumber?: string, wabaId?: string, phoneId?: string) => void;
+  disconnectWhatsApp: () => void;
+  updateSendingSchedule: (sendModeOrSchedule: any, scheduledTime?: string) => void;
   upgradePlan: (planId: 'starter' | 'professional' | 'business' | 'enterprise') => void;
 
   // SCGT actions
   submitSCGTVerification: (membershipId: string, chapter: string) => void;
+  verifySCGTMembership: (membershipId: string, chapter: string) => void;
   updateSCGTVisibility: (settings: { allowWhatsApp: boolean; allowBirthday: boolean; allowBusiness: boolean }) => void;
 
   // Templates
   createTemplate: (tpl: Omit<Template, 'id' | 'version' | 'usageCount'>) => void;
   updateTemplate: (id: string, tpl: Partial<Template>) => void;
+  deleteTemplate: (id: string) => void;
 
   // Notifications
   markNotificationRead: (id: string) => void;
@@ -181,6 +201,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeCustomerForDrawer, setActiveCustomerForDrawer] = useState<Customer | null>(null);
   const [activeWishTargetCustomer, setActiveWishTargetCustomer] = useState<Customer | null>(null);
   const [isReviewSendAllOpen, setIsReviewSendAllOpen] = useState<boolean>(false);
+  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState<boolean>(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isReviewSendModalOpen, setIsReviewSendModalOpen] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
   // Sync to localStorage
@@ -507,6 +532,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Template updated and incremented version.', 'success');
   };
 
+  const deleteTemplate = (id: string) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    showToast('Template deleted from library.', 'info');
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -568,6 +598,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Reset application to fresh demo data.', 'success');
   };
 
+  const setRole = (role: 'owner' | 'manager' | 'staff' | 'superadmin') => {
+    if (user) {
+      setUser({ ...user, role: role as any });
+    } else {
+      setUser({ ...INITIAL_USER, role: role as any });
+    }
+    showToast(`Simulation role switched to ${role.toUpperCase()}.`, 'info');
+  };
+
+  const connectWhatsApp = (phoneNumber?: string, wabaId?: string, phoneId?: string) => {
+    setTenant((prev) => ({
+      ...prev,
+      whatsAppStatus: 'connected',
+      whatsAppPhoneNumber: phoneNumber || prev.whatsAppPhoneNumber || '+91 98220 12345',
+      wabaId: wabaId || prev.wabaId || 'waba_99182390192',
+      phoneId: phoneId || prev.phoneId || 'phone_88192301923',
+    }));
+    showToast('WhatsApp Business Account connected successfully via Meta API.', 'success');
+  };
+
+  const disconnectWhatsApp = () => {
+    setTenant((prev) => ({
+      ...prev,
+      whatsAppStatus: 'disconnected',
+    }));
+    showToast('WhatsApp Business Account disconnected.', 'info');
+  };
+
+  const updateSendingSchedule = (sendModeOrSchedule: any, scheduledTime?: string) => {
+    if (typeof sendModeOrSchedule === 'string') {
+      setTenant((prev) => ({
+        ...prev,
+        sendMode: sendModeOrSchedule as any,
+        scheduledTime: scheduledTime || prev.scheduledTime,
+      }));
+    } else if (typeof sendModeOrSchedule === 'object' && sendModeOrSchedule !== null) {
+      setPreferences((prev) => ({
+        ...prev,
+        ...sendModeOrSchedule,
+      }));
+      if (sendModeOrSchedule.sendTime) {
+        setTenant((prev) => ({ ...prev, scheduledTime: sendModeOrSchedule.sendTime }));
+      }
+    }
+    showToast('Sending schedule & automation rules updated.', 'success');
+  };
+
+  const verifySCGTMembership = (membershipId: string, chapter: string) => {
+    submitSCGTVerification(membershipId, chapter);
+  };
+
+  const currentRole = (user?.role as 'owner' | 'manager' | 'staff' | 'superadmin') || 'owner';
+  const toast = toasts.length > 0 ? toasts[toasts.length - 1] : null;
+
   return (
     <AppContext.Provider
       value={{
@@ -575,6 +659,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tenant,
         isLoggedIn: !!user,
         currentRoute,
+        currentPath: currentRoute,
+        currentRole,
+        setRole,
         navigate,
         customers,
         messages,
@@ -588,6 +675,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         featureFlags,
         preferences,
         toasts,
+        toast,
         showToast,
         removeToast,
         activeCustomerForDrawer,
@@ -596,6 +684,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveWishTargetCustomer,
         isReviewSendAllOpen,
         setIsReviewSendAllOpen,
+        isAddCustomerModalOpen,
+        setIsAddCustomerModalOpen,
+        customerToEdit,
+        setCustomerToEdit,
+        isImportModalOpen,
+        setIsImportModalOpen,
+        isExportModalOpen,
+        setIsExportModalOpen,
+        isReviewSendModalOpen,
+        setIsReviewSendModalOpen,
         addCustomer,
         updateCustomer,
         archiveCustomer,
@@ -607,11 +705,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateBranding,
         updatePreferences,
         toggleWhatsAppConnection,
+        connectWhatsApp,
+        disconnectWhatsApp,
+        updateSendingSchedule,
         upgradePlan,
         submitSCGTVerification,
+        verifySCGTMembership,
         updateSCGTVisibility,
         createTemplate,
         updateTemplate,
+        deleteTemplate,
         markNotificationRead,
         markAllNotificationsRead,
         loginAs,

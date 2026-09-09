@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const TemplatesPage: React.FC = () => {
-  const { templates, tenant, showToast } = useApp();
+  const { templates, tenant, showToast, createTemplate, updateTemplate, deleteTemplate } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -58,10 +58,10 @@ export const TemplatesPage: React.FC = () => {
 
   const handleOpenEdit = (t: Template) => {
     setEditingTemplate(t);
-    setFormName(t.name);
-    setFormCategory(t.category);
+    setFormName(t.name || t.title || '');
+    setFormCategory(t.category || 'WARM');
     setFormLanguage(t.language);
-    setFormContent(t.content);
+    setFormContent(t.content || t.body || '');
     setIsModalOpen(true);
   };
 
@@ -73,12 +73,22 @@ export const TemplatesPage: React.FC = () => {
     e.preventDefault();
     if (!formName.trim() || !formContent.trim()) return;
 
-    showToast(
-      editingTemplate
-        ? 'Template updated successfully!'
-        : 'New wish template added to library!',
-      'success'
-    );
+    if (editingTemplate) {
+      updateTemplate(editingTemplate.id, {
+        name: formName.trim(),
+        category: formCategory,
+        language: formLanguage,
+        content: formContent.trim(),
+      });
+    } else {
+      createTemplate({
+        name: formName.trim(),
+        category: formCategory,
+        language: formLanguage,
+        content: formContent.trim(),
+        tags: [formCategory.toLowerCase(), formLanguage.toLowerCase()],
+      });
+    }
     setIsModalOpen(false);
   };
 
@@ -148,68 +158,86 @@ export const TemplatesPage: React.FC = () => {
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredTemplates.map((t) => (
-          <div
-            key={t.id}
-            className="p-5 rounded-3xl bg-white border border-stone-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-stone-900">{t.name}</span>
-                <span className="text-[10px] uppercase font-bold bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md">
-                  {t.language}
-                </span>
-              </div>
+        {filteredTemplates.map((t) => {
+          const cardTitle = t.name || t.title || 'Wish Template';
+          const cardContent = t.content || t.body || '';
+          const cardCategory = t.category || t.pack || 'Healthcare';
+          const cardUses = t.useCount ?? t.usageCount ?? 0;
 
-              {/* Tags & Category */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded border border-emerald-200">
-                  {t.category}
-                </span>
-                {t.isDefault && (
-                  <span className="text-[10px] bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-200">
-                    Default
+          return (
+            <div
+              key={t.id}
+              className="p-5 rounded-3xl bg-white border border-stone-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-stone-900">{cardTitle}</span>
+                  <span className="text-[10px] uppercase font-bold bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md">
+                    {t.language}
                   </span>
-                )}
-                <span className="text-[10px] text-stone-400">Used {t.useCount} times</span>
+                </div>
+
+                {/* Tags & Category */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded border border-emerald-200">
+                    {cardCategory}
+                  </span>
+                  {t.isDefault && (
+                    <span className="text-[10px] bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-200">
+                      Default
+                    </span>
+                  )}
+                  <span className="text-[10px] text-stone-400">Used {cardUses} times</span>
+                </div>
+
+                {/* Message Bubble Preview */}
+                <WhatsAppBubble
+                  message={cardContent
+                    .replace(/{{name}}/g, 'Ananya Deshmukh')
+                    .replace(/{{business_name}}/g, tenant.profile.businessName)
+                    .replace(/{{city}}/g, 'Pune')}
+                  recipientName="Ananya Deshmukh"
+                  businessName={tenant.profile.businessName}
+                  status="delivered"
+                  time="08:30 AM"
+                />
               </div>
 
-              {/* Message Bubble Preview */}
-              <WhatsAppBubble
-                message={t.content
-                  .replace(/{{name}}/g, 'Ananya Deshmukh')
-                  .replace(/{{business_name}}/g, tenant.profile.businessName)
-                  .replace(/{{city}}/g, 'Pune')}
-                recipientName="Ananya Deshmukh"
-                businessName={tenant.profile.businessName}
-                status="delivered"
-                time="08:30 AM"
-              />
-            </div>
+              {/* Actions */}
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleOpenEdit(t)}
+                    className="text-stone-600 hover:text-stone-900 font-semibold flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
 
-            {/* Actions */}
-            <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
-              <button
-                onClick={() => handleOpenEdit(t)}
-                className="text-stone-600 hover:text-stone-900 font-semibold flex items-center gap-1"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit Template</span>
-              </button>
+                  <button
+                    onClick={() => deleteTemplate(t.id)}
+                    className="text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1"
+                    title="Delete template"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
 
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(t.content);
-                  showToast('Template copied to clipboard!', 'info');
-                }}
-                className="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy</span>
-              </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(cardContent);
+                    showToast('Template copied to clipboard!', 'info');
+                  }}
+                  className="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy</span>
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Create / Edit Template Modal */}

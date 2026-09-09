@@ -406,7 +406,7 @@ export const ImportCustomersModal: React.FC<ImportCustomersModalProps> = ({
                 <div className="flex items-center justify-between text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl">
                   <span>{errorCount} row has formatting errors and will be safely omitted.</span>
                   <button
-                    onClick={() => alert('Downloaded error rows report')}
+                    onClick={() => showToast('Downloaded validation error rows CSV.', 'info')}
                     className="text-emerald-700 font-semibold hover:underline"
                   >
                     Download Error CSV

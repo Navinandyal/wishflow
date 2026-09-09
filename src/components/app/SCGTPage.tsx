@@ -61,6 +61,13 @@ export const SCGTPage: React.FC = () => {
 
   const handleSendNetworkingWish = () => {
     if (!activeWishMember) return;
+    sendMessage(
+      activeWishMember.id,
+      networkingWishText,
+      tenant.whatsAppStatus === 'connected' ? 'OWN_NUMBER' : 'ASSISTED',
+      'Networking / SCGT Chapter',
+      'English'
+    );
     showToast(`Dispatched networking wish to ${activeWishMember.name}!`, 'success');
     setActiveWishMember(null);
   };

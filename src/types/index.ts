@@ -21,6 +21,8 @@ export interface BusinessProfile {
   logoUrl?: string;
   brandDescription?: string;
   customSlug?: string;
+  address?: string;
+  signatureSignOff?: string;
 }
 
 export interface Tenant {
@@ -37,14 +39,24 @@ export interface Tenant {
   createdAt: string;
   whatsAppStatus: 'connected' | 'disconnected' | 'pending' | 'suspended';
   whatsAppNumber?: string;
+  whatsAppPhoneNumber?: string;
   whatsAppDisplayName?: string;
   whatsAppQuality?: 'GREEN' | 'YELLOW' | 'RED';
   whatsAppTier?: 'TIER_1K' | 'TIER_10K' | 'TIER_100K' | 'TIER_UNLIMITED';
+  wabaId?: string;
+  phoneId?: string;
   scgtVerified: boolean;
   scgtVerificationStatus: 'unverified' | 'pending' | 'under_review' | 'info_requested' | 'verified' | 'rejected';
+  scgtStatus?: string;
   scgtChapter?: string;
   scgtRegion?: string;
   scgtMembershipId?: string;
+  scgtMemberId?: string;
+  plan?: string;
+  sendMode?: any;
+  scheduledTime?: string;
+  defaultLanguage?: string;
+  defaultTone?: string;
 }
 
 export type ConsentStatus = 'ACTIVE' | 'PENDING' | 'WITHDRAWN';
@@ -105,7 +117,7 @@ export interface WishVariant {
   originalText?: string;
 }
 
-export type SendMode = 'ASSISTED' | 'MANAGED' | 'OWN_NUMBER';
+export type SendMode = 'ASSISTED' | 'MANAGED' | 'OWN_NUMBER' | 'MANUAL_REVIEW' | 'AUTOPILOT';
 export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | 'skipped';
 
 export interface MessageRecord {
@@ -115,9 +127,11 @@ export interface MessageRecord {
   customerName: string;
   customerMobile: string;
   messageBody: string;
+  messageText?: string;
   templateId?: string;
   templateVersion?: string;
   tone: string;
+  toneUsed?: string;
   language: string;
   isAiGenerated: boolean;
   sendMode: SendMode;
@@ -125,6 +139,7 @@ export interface MessageRecord {
   costInINR: number;
   providerMessageId?: string;
   queuedAt: string;
+  createdAt?: string;
   sentAt?: string;
   deliveredAt?: string;
   readAt?: string;
@@ -152,22 +167,22 @@ export interface ScheduledJob {
 export interface Template {
   id: string;
   tenantId?: string; // null for global library
-  title: string;
-  body: string;
-  pack: 'Healthcare & Wellness' | 'Professional Services' | 'Retail & Hospitality' | 'SCGT Networking' | 'General Business';
-  tone: 'Warm & Heartfelt' | 'Professional & Respectful' | 'Cheerful & Festive' | 'Brief & Crisp' | 'Networking / Business Value';
-  language: 'English' | 'Hindi' | 'Marathi';
-  occasion: 'BIRTHDAY' | 'ANNIVERSARY' | 'FESTIVAL';
-  length: 'Short' | 'Medium' | 'Long';
-  isFavorite?: boolean;
-  isLibrary: boolean;
-  version: number;
-  metaApprovalStatus?: 'APPROVED' | 'PENDING' | 'REJECTED';
-  usageCount: number;
   name?: string;
-  category?: 'PROFESSIONAL' | 'WARM' | 'FESTIVE' | 'SHORT' | 'NETWORKING' | 'INDUSTRY' | string;
+  title?: string;
   content?: string;
+  body?: string;
+  language: 'English' | 'Hindi' | 'Marathi';
+  category?: 'PROFESSIONAL' | 'WARM' | 'FESTIVE' | 'SHORT' | 'NETWORKING' | 'INDUSTRY' | string;
   tags?: string[];
+  pack?: 'Healthcare & Wellness' | 'Professional Services' | 'Retail & Hospitality' | 'SCGT Networking' | 'General Business' | string;
+  tone?: 'Warm & Heartfelt' | 'Professional & Respectful' | 'Cheerful & Festive' | 'Brief & Crisp' | 'Networking / Business Value' | string;
+  occasion?: 'BIRTHDAY' | 'ANNIVERSARY' | 'FESTIVAL';
+  length?: 'Short' | 'Medium' | 'Long';
+  isFavorite?: boolean;
+  isLibrary?: boolean;
+  version?: number;
+  metaApprovalStatus?: 'APPROVED' | 'PENDING' | 'REJECTED';
+  usageCount?: number;
   isDefault?: boolean;
   useCount?: number;
 }

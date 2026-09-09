@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PLANS } from '../../data/initialData';
+import { Navbar } from '../common/Navbar';
 import { Check, ArrowRight, ShieldCheck, Sparkles, HelpCircle } from 'lucide-react';
 
 export const PricingPage: React.FC = () => {
@@ -17,8 +18,10 @@ export const PricingPage: React.FC = () => {
   };
 
   return (
-    <div id="pricing-page" className="py-12 sm:py-20 bg-stone-50 min-h-screen text-stone-900">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div id="pricing-page" className="bg-stone-50 min-h-screen text-stone-900 flex flex-col">
+      <Navbar />
+      <div className="flex-1 py-12 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -161,5 +164,6 @@ export const PricingPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
